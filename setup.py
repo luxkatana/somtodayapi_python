@@ -11,12 +11,13 @@ setup(
         name="somtodaydotpy", 
         version=VERSION,
         long_description=data,
-        
         author="luxkatana/TheTrojanHorse",
         author_email="taseen.bibi@gmail.com",
         description=DESCRIPTION,
         packages=find_packages(),
         install_requires=["requests", "httpx"], # add any additional packages that 
+        url=""
+
         
         
         

@@ -5,7 +5,16 @@
 
 this(somtoday python) is a package that fetches and interacts with somtoday API using https requests.
 
+**installation**
 
+*for macos & linux*
+```
+pip3 install somtodaydotpy
+```
+*for windows*
+```
+pip install somtodaydotpy
+```
 ***examples***
 
 *basic interacting with a student(getting data from the student)*
