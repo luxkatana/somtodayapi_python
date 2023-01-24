@@ -16,7 +16,7 @@ setup(
         description=DESCRIPTION,
         packages=find_packages(),
         install_requires=["requests", "httpx"], # add any additional packages that 
-        url=""
+        url="https://github.com/luxkatana/somtodayapi_python"
 
         
         
