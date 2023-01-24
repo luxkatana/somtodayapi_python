@@ -10,6 +10,7 @@ setup(
        # the name must match the folder name 'verysimplemodule'
         name="somtodaydotpy", 
         version=VERSION,
+        long_description_content_type="text/markdown",
         long_description=data,
         author="luxkatana/TheTrojanHorse",
         author_email="taseen.bibi@gmail.com",

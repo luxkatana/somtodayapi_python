@@ -1,0 +1,11 @@
+README.md
+setup.cfg
+setup.py
+somtodaydotpy.egg-info/PKG-INFO
+somtodaydotpy.egg-info/SOURCES.txt
+somtodaydotpy.egg-info/dependency_links.txt
+somtodaydotpy.egg-info/requires.txt
+somtodaydotpy.egg-info/top_level.txt
+somtodaypython/__init__.py
+somtodaypython/asynchronous_somtoday.py
+somtodaypython/nonasyncsomtoday.py
