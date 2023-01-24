@@ -1,6 +1,6 @@
 from setuptools import setup, find_packages
 
-VERSION = '0.0.1' 
+VERSION = '1.1.1' 
 DESCRIPTION = 'Python package for interacting & fetching somtoday\'s data.'
 
 with open("./README.md", "r")as file:
@@ -8,7 +8,7 @@ with open("./README.md", "r")as file:
 # Setting up
 setup(
        # the name must match the folder name 'verysimplemodule'
-        name="somtodaydotpy", 
+        name="somtodaypython", 
         version=VERSION,
         long_description_content_type="text/markdown",
         long_description=data,
