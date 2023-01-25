@@ -1,4 +1,11 @@
 ***Somtoday Python, the interactor***
+***changes in 0.0.2***
+<ul>
+
+<li>Ran pylint for somtodaypython</li>
+<li>changed README.md mistakes</li>
+<li>formatted somtodaypython source for better readability </li>
+</ul>
 
 
 > What the f**ck is this?
