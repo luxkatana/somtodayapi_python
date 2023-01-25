@@ -9,11 +9,15 @@ this(somtoday python) is a package that fetches and interacts with somtoday API 
 
 *for macos & linux*
 ```
-pip3 install somtodaydotpy
+python3 -m pip3 install somtodaypython 
 ```
 *for windows*
 ```
-pip install somtodaydotpy
+python3 -m pip install somtodaypython 
+```
+OR
+```
+python -m pip install somtodaypython
 ```
 ***examples***
 
@@ -48,7 +52,7 @@ We also support asynchronous for somtodaypython.
 import somtodaypython.asynchronous_somtoday as async_somtoday
 import  asyncio # builtin library for asynchronous execution
 async def main() -> None:
-    school = await async_somtoday.get_school("SCHOOLNAME")
+    school = await async_somtoday.find_school("SCHOOLNAME")
     student = await school.get_student("NAME", "PASSWORD")
     print(student.full_name)
 asyncio.get_event_loop().run_until_complete(main()) # executing the main() function
@@ -64,7 +68,7 @@ import  asyncio # builtin library for asynchronous execution
 async def main() -> None:
     now = dt.now()
     tomorrow = dt(now.year, now.month, now.day  + 2)
-    school = await async_somtoday.get_school("SCHOOLNAME")
+    school = await async_somtoday.find_school("SCHOOLNAME")
     student = await school.get_student("NAME", "PASSWORD")
     timetable: list[list[async_somtoday.Subject]] = await student.fetch_schedule(now, tomorrow, group_by_day=True)
     for day in timetable:
