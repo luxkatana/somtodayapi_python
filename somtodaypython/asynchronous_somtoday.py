@@ -4,11 +4,17 @@ asynchornous support for somtoday API
 import base64
 import os
 import string
+from . import nonasyncsomtoday as nonasync_smtd
 from urllib.parse import urlparse, parse_qs
 from datetime import datetime
 import hashlib
 import random
 import httpx
+class PasFoto(nonasync_smtd.PasFoto):
+    def __init__(self, b64url: str) -> None:
+        super().__init__(b64url)
+    def save(self, save_to: nonasync_smtd.Path) -> bool | Exception:
+        return super().save(save_to)
 
 class Subject:
     '''
@@ -49,6 +55,7 @@ class Student:
         self.gender: str
         self.user_id: int
         self.indentifier: int
+        self.pasfoto: PasFoto
         self.birth_datetime: datetime
         self.endpoint = "https://api.somtoday.nl"
     async def fetch_schedule(self,
@@ -128,6 +135,7 @@ class Student:
                                                           "Accept": "application/json"})
                 to_dict = name_response.json()
                 to_dict = to_dict["items"][0]
+                self.pasfoto  = PasFoto(to_dict["additionalObjects"]["pasfoto"]["datauri"])
                 self.full_name = to_dict.get("roepnaam") + " " + to_dict.get("achternaam")
                 self.user_id = to_dict.get("links")[0]["id"]
                 self.email = to_dict.get("email")

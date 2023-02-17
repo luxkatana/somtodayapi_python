@@ -4,6 +4,7 @@ Module that provide non-asynchronous functions for using the somtoday API
 '''
 import base64
 from typing import Any
+from pathlib import Path
 from datetime import datetime
 import hashlib
 import os
@@ -11,7 +12,24 @@ import random
 import string
 from urllib.parse import urlparse, parse_qs
 import requests
+class PasFoto:
+    def __init__(self, b64url: str) -> None:
+        self.base64url: bytes = b64url[21::].encode()
+    def save(self,  save_to: Path) -> bool | Exception:
+        """save the PasFoto as file
 
+        Args:
+            save_to (Path): file where it should save the PasFoto
+
+        Returns:
+            bool | Exception: returns True if everything was gone successfully otherwise it'll return an Exception when an error occurs
+        """        
+        try:
+            with open(save_to, "wb")as f:
+                f.write(base64.decodebytes(self.base64url))
+                return True
+        except Exception as e:
+            return e
 
 class Subject:
     '''
@@ -59,6 +77,7 @@ class Student:
         self.indentifier: int
         self.birth_datetime: datetime
         self.endpoint = "https://api.somtoday.nl"
+        self.pasfoto: PasFoto
         self.load_more_data()
 
     def fetch_schedule(self,
@@ -146,8 +165,11 @@ class Student:
                                   "Authorization":
                                       f"Bearer {self.access_token}",
                                       "Accept": "application/json"},
+                                      params={"additional": "pasfoto"},
+                                      
                               timeout=30)as name_response:
                 to_dict = name_response.json()["items"][0]
+                self.pasfoto  = PasFoto(to_dict["additionalObjects"]["pasfoto"]["datauri"])
                 self.full_name = to_dict.get(
                     "roepnaam") + " " + to_dict.get("achternaam")
                 self.user_id = to_dict.get("links")[0]["id"]

@@ -1,2 +1,6 @@
 /.vscode
 /Makefile
+/__pycache__
+/somtodaypython/__pycache__
+/.env
+/test.*

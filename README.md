@@ -1,10 +1,8 @@
 ***Somtoday Python, the interactor***
-***changes in 0.0.2***
-<ul>
 
-<li>Ran pylint for somtodaypython</li>
-<li>changed README.md mistakes</li>
-<li>formatted somtodaypython source for better readability </li>
+***changes in 0.0.3***
+<ul>
+<li>added PasFoto feature to get the PasFoto/Photo of the student.</li>
 </ul>
 
 
@@ -26,6 +24,11 @@ OR
 ```
 python -m pip install somtodaypython
 ```
+
+if neither above works then you can always do this
+```
+pip3 install git+https://github.com/luxkatana/somtodayapi_python
+```
 ***examples***
 
 *basic interacting with a student(getting data from the student)*
@@ -34,20 +37,20 @@ python -m pip install somtodaypython
 import somtodaypython.nonasyncsomtoday as nonasync_somtoday
 school = nonasync_somtoday.find_school("SchoolName")
 student = school.get_student("NAME", "password")
-print(f"email : {student.email}\tname: {student.full_name}\tgender: {student.full_name}")
+print(f"email : {student.email}\tname: {student.full_name}\tgender: {student.gender}")
 ```
 *basic interacting with the timetable of a student*
 ```py
 import somtodaypython.nonasyncsomtoday as nonasync_somtoday
-from datetime import datetime as dt
+from datetime import timedelta, datetime as dt
 school = nonasync_somtoday.find_school("SchoolName")
 student = school.get_student("NAME", "password")
 today = dt.now()
-tomorrow = dt(today.year, today.month, today.day + 2) # it will skip the secondth day
+tomorrow = today + timedelta(days=2)
 timetable: list[list[nonasync_somtoday.Subject]] = student.fetch_schedule(today, tomorrow, group_by_day=True)
 for day in timetable:
     for day_subject in day:
-        print(day_subect.name)
+        print(day_subect.subject_name)
 ```
 
 **Asynchronous suppport**
@@ -70,17 +73,17 @@ asyncio.get_event_loop().run_until_complete(main()) # executing the main() funct
 ```py
 
 import somtodaypython.asynchronous_somtoday as async_somtoday
-from datetime import datetime as dt
+from datetime import timedelta,datetime as dt
 import  asyncio # builtin library for asynchronous execution
 async def main() -> None:
     now = dt.now()
-    tomorrow = dt(now.year, now.month, now.day  + 2)
+    tomorrow = now + timedelta(days=2)
     school = await async_somtoday.find_school("SCHOOLNAME")
     student = await school.get_student("NAME", "PASSWORD")
     timetable: list[list[async_somtoday.Subject]] = await student.fetch_schedule(now, tomorrow, group_by_day=True)
     for day in timetable:
         for  subject in day:
-            print(subject.name)
+            print(subject.subject_name)
 asyncio.get_event_loop().run_until_complete(main()) # executing the main() function
 ```
 
