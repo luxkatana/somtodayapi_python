@@ -3,6 +3,8 @@
 ***changes in 0.0.3***
 <ul>
 <li>added PasFoto feature to get the PasFoto/Photo of the student.</li>
+<li>added new attribute: student.identifier for student's account's ID</li>
+<li>old student.identifier has been moved to student.leerlingnummer </li>
 </ul>
 
 

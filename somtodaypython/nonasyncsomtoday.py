@@ -30,11 +30,16 @@ class PasFoto:
                 return True
         except Exception as e:
             return e
-
+class Cijfer:
+    def __init__(self, **kwargs) -> None:
+        self.vak: str = kwargs.get("vak")
+        self.datum_invoer: datetime = kwargs.get("datum")
+        self.leerjaar: int = kwargs.get("leerjaar")
+        self.resultaat: str = kwargs.get("resultaat")
 class Subject:
     '''
     Subject:
-    a model what represents a single school subject/hour
+    a model what represents a single school subject/hour from timetable
     THIS IS NOT MEANT TO BE CREATED BY THE USER
     '''
 
@@ -73,13 +78,58 @@ class Student:
         self.email: str
         self.full_name: str
         self.gender: str
-        self.user_id: int
+        self.cijfers: list[Cijfer]
+        self.leerlingnummer: int
         self.indentifier: int
         self.birth_datetime: datetime
         self.endpoint = "https://api.somtoday.nl"
         self.pasfoto: PasFoto
+        self.dump_cache: dict[str]
         self.load_more_data()
+    def fetch_cijfers(self, lower_bound_range: int, upper_bound_range: int) -> list[Cijfer]:
+        """fetches the cijfers and saves it to self.cijfers
 
+        Args:
+            lower_bound_range (int): minimum to return must be greater than 0  and fewer than 100
+            upper_bound_range (int): maximum to return(must be fewer than 100)
+        Raises:
+            ValueError: lower_boung_range or upper_boung_range is negative or more than 100
+            ExceptionGroup: status code is not what is expected
+
+        Returns:
+            list[Cijfer]: list of Cijfers
+        """        
+        if lower_bound_range >= 100 or lower_bound_range <= 0:
+            raise ValueError("lower_bound_range can't be negative or more than 100")
+        elif  upper_bound_range >= 100 or upper_bound_range <= 0:
+            raise ValueError("upper_bound_range can't be negative or more than 100")
+        headers ={
+            "Accept": "Application/json",
+            "Authorization": f"Bearer {self.access_token}",
+            "Range": f"items={lower_bound_range}-{upper_bound_range}"
+        }
+        params = {
+            "additional": ['berekendRapportCijfer']
+        }
+        response = requests.get(f"{self.endpoint}/rest/v1/resultaten/huidigVoorLeerling/{self.indentifier}", params=params, headers=headers)
+        if response.status_code >= 200 and response.status_code < 300:
+            to_dict = response.json()
+            items: list[dict] = to_dict["items"]
+            self.cijfers = []
+            for item in items:
+                tijd_nagekeken = datetime.fromisoformat(item["datumInvoer"])
+                resultaat = item.get("resultaat", "0")
+                leerjaar = item['leerjaar']
+                vak = item["vak"]["naam"]
+                self.cijfers.append(Cijfer(vak=vak, datum=tijd_nagekeken, leerjaar=leerjaar, resultaat=resultaat))
+            self.dump_cache = to_dict
+            return self.cijfers
+        else:
+            raise ExceptionGroup("error", [
+                [
+                    f"response returned status code {response.status_code} from {self.endpoint}/rest/v1/resultaten/huidigVoorLeerling/{self.indentifier}"
+                ]
+            ])
     def fetch_schedule(self,
                         begindt: datetime,
                        enddt: datetime,
@@ -165,16 +215,16 @@ class Student:
                                   "Authorization":
                                       f"Bearer {self.access_token}",
                                       "Accept": "application/json"},
-                                      params={"additional": "pasfoto"},
+                                      params={"additional": ["pasfoto", "leerlingen"]},
                                       
                               timeout=30)as name_response:
                 to_dict = name_response.json()["items"][0]
                 self.pasfoto  = PasFoto(to_dict["additionalObjects"]["pasfoto"]["datauri"])
                 self.full_name = to_dict.get(
                     "roepnaam") + " " + to_dict.get("achternaam")
-                self.user_id = to_dict.get("links")[0]["id"]
+                self.indentifier= to_dict.get("links")[0]["id"]
                 self.email = to_dict.get("email")
-                self.indentifier = to_dict.get("leerlingnummer")
+                self.leerlingnummer= to_dict.get("leerlingnummer")
                 self.gender = "Male" if to_dict.get(
                     "geslacht") == "Man" else "Female"
                 year, month, day = to_dict.get("geboortedatum").split("-")

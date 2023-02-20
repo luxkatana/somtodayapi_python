@@ -4,3 +4,4 @@
 /somtodaypython/__pycache__
 /.env
 /test.*
+/*.json
