@@ -3,61 +3,96 @@ Module that provide non-asynchronous functions for using the somtoday API
 
 '''
 import base64
-from typing import Any
+from typing import Any, Union
 from pathlib import Path
 from datetime import datetime
+from dataclasses import dataclass
 import hashlib
 import os
 import random
 import string
 from urllib.parse import urlparse, parse_qs
 import requests
+
+
 class PasFoto:
-    def __init__(self, b64url: str) -> None:
+    def __init__(self, b64url: str):
         self.base64url: bytes = b64url[21::].encode()
-    def save(self,  save_to: Path) -> bool | Exception:
+
+    def save(self, save_to: Path) -> Union[bool, Exception]:
         """save the PasFoto as file
 
         Args:
             save_to (Path): file where it should save the PasFoto
 
         Returns:
-            bool | Exception: returns True if everything was gone successfully otherwise it'll return an Exception when an error occurs
-        """        
+            bool: returns True if everything was gone successfully
+        """
         try:
-            with open(save_to, "wb")as f:
+            with open(save_to, "wb") as f:
                 f.write(base64.decodebytes(self.base64url))
                 return True
         except Exception as e:
-            return e
+            raise e
+
+
+@dataclass
 class Cijfer:
-    def __init__(self, **kwargs) -> None:
-        self.vak: str = kwargs.get("vak")
-        self.datum_invoer: datetime = kwargs.get("datum")
-        self.leerjaar: int = kwargs.get("leerjaar")
-        self.resultaat: str = kwargs.get("resultaat")
+    vak: str
+    datum: datetime
+    leerjaar: int
+    resultaat: str
+
+    def __eq__(self, other):
+        if isinstance(other, Cijfer):
+            return self.resultaat == other.resultaat
+        return NotImplemented
+
+    def __lt__(self, other):
+        if isinstance(other, Cijfer):
+            return self.resultaat < other.resultaat
+        return NotImplemented
+
+    def __le__(self, other):
+        if isinstance(other, Cijfer):
+            return self.resultaat <= other.resultaat
+        return NotImplemented
+
+    def __gt__(self, other):
+        if isinstance(other, Cijfer):
+            return self.resultaat > other.resultaat
+        return NotImplemented
+
+    def __ge__(self, other):
+        if isinstance(other, Cijfer):
+            return self.resultaat >= other.resultaat
+        return NotImplemented
+
+
 class Subject:
     '''
     Subject:
     a model what represents a single school subject/hour from timetable
     THIS IS NOT MEANT TO BE CREATED BY THE USER
     '''
+    subject_name: str
+    begin_time: datetime
+    end_time: datetime
+    subject_short: str
+    begin_hour: int
+    end_hour: int
+    location: str
+    teacher_short: str
 
-    def __init__(self, **kwargs: dict[str, Any]) -> None:
+    def __init__(self, **kwargs: dict[str, Any]):
         self.subject_name: str = kwargs.get("subject")
         self.begin_time: datetime = kwargs.get("begindt")
         self.end_time: datetime = kwargs.get("enddt")
         self.subject_short: str = kwargs.get("subject_short")
         self.begin_hour: int = kwargs.get("beginhour")
-        self.end_hour:  int = kwargs.get("endhour")
+        self.end_hour: int = kwargs.get("endhour")
         self.location: str = kwargs.get("location")
         self.teacher_short: str = kwargs.get("teacher_shortcut")
-
-    def __repr__(self):
-        return f"{self.subject_name}"
-
-    def __str__(self):
-        return self.__repr__()
 
 
 class Student:
@@ -66,7 +101,8 @@ class Student:
         Model that represents a Student
         THIS IS NOT MEANT TO BE CREATED BY THE USER
     '''
-    def __init__(self, **kwargs) -> None:
+
+    def __init__(self, **kwargs):
         self.name: str = kwargs.get("name")
         self.password: str = kwargs.get("password")
         self.school_uuid: str = kwargs.get("uuid")
@@ -74,7 +110,7 @@ class Student:
         self.auth_code: str = kwargs.get("auth_code")
         self.access_token: str = kwargs.get("access")
         self.refresh_token: str = kwargs.get("refresh")
-        self.school_subjects: list[Subject] | list[list[Subject]] = []
+        self.school_subjects: list[Union[Subject, list[Subject]]] = []
         self.email: str
         self.full_name: str
         self.gender: str
@@ -86,6 +122,12 @@ class Student:
         self.pasfoto: PasFoto
         self.dump_cache: dict[str]
         self.load_more_data()
+
+    def __eq__(self, __value: Any) -> bool:
+        if isinstance(__value, Student):
+            return self.name == __value.name and self.school_name == __value.school_name
+        return NotImplemented
+
     def fetch_cijfers(self, lower_bound_range: int, upper_bound_range: int) -> list[Cijfer]:
         """fetches the cijfers and saves it to self.cijfers
 
@@ -98,12 +140,12 @@ class Student:
 
         Returns:
             list[Cijfer]: list of Cijfers
-        """        
+        """
         if lower_bound_range >= 100 or lower_bound_range <= 0:
             raise ValueError("lower_bound_range can't be negative or more than 100")
-        elif  upper_bound_range >= 100 or upper_bound_range <= 0:
+        elif upper_bound_range >= 100 or upper_bound_range <= 0:
             raise ValueError("upper_bound_range can't be negative or more than 100")
-        headers ={
+        headers = {
             "Accept": "Application/json",
             "Authorization": f"Bearer {self.access_token}",
             "Range": f"items={lower_bound_range}-{upper_bound_range}"
@@ -111,7 +153,8 @@ class Student:
         params = {
             "additional": ['berekendRapportCijfer']
         }
-        response = requests.get(f"{self.endpoint}/rest/v1/resultaten/huidigVoorLeerling/{self.indentifier}", params=params, headers=headers)
+        response = requests.get(f"{self.endpoint}/rest/v1/resultaten/huidigVoorLeerling/{self.indentifier}",
+                                params=params, headers=headers)
         if response.status_code >= 200 and response.status_code < 300:
             to_dict = response.json()
             items: list[dict] = to_dict["items"]
@@ -130,10 +173,11 @@ class Student:
                     f"response returned status code {response.status_code} from {self.endpoint}/rest/v1/resultaten/huidigVoorLeerling/{self.indentifier}"
                 ]
             ])
+
     def fetch_schedule(self,
-                        begindt: datetime,
+                       begindt: datetime,
                        enddt: datetime,
-                       group_by_day: bool = False) -> list[Subject] | list[list[Subject]]:
+                       group_by_day: bool = False) -> list[Union[Subject, list[Subject]]]:
         """description: fetches the timetable and saves it to self.school_subjects
         Args:
             begindt (datetime): starting date to fetch
@@ -182,11 +226,11 @@ class Student:
                                         teacher_shortcut=docent_afkorting)
                 if group_by_day and begin_time.strftime("%Y-%m-%d") in groups:
                     group = groups.get(
-                        f"{begin_time.year}-{begin_time.month}-{begin_time.day}")
+                        begin_time.strftime("%Y-%m-%d"))
                     group.append(target_object)
-                elif group_by_day and begin_time.strftime("%Y-%m-%d")  not in groups:
+                elif group_by_day and begin_time.strftime("%Y-%m-%d") not in groups:
                     new_group = {
-                        f"{begin_time.year}-{begin_time.month}-{begin_time.day}": [target_object,]
+                        begin_time.strftime("%Y-%m-%d"): [target_object]
                     }
                     groups.update(new_group)
                 else:
@@ -214,17 +258,17 @@ class Student:
                               headers={
                                   "Authorization":
                                       f"Bearer {self.access_token}",
-                                      "Accept": "application/json"},
-                                      params={"additional": ["pasfoto", "leerlingen"]},
-                                      
-                              timeout=30)as name_response:
+                                  "Accept": "application/json"},
+                              params={"additional": ["pasfoto", "leerlingen"]},
+
+                              timeout=30) as name_response:
                 to_dict = name_response.json()["items"][0]
-                self.pasfoto  = PasFoto(to_dict["additionalObjects"]["pasfoto"]["datauri"])
+                self.pasfoto = PasFoto(to_dict["additionalObjects"]["pasfoto"]["datauri"])
                 self.full_name = to_dict.get(
                     "roepnaam") + " " + to_dict.get("achternaam")
-                self.indentifier= to_dict.get("links")[0]["id"]
+                self.indentifier = to_dict.get("links")[0]["id"]
                 self.email = to_dict.get("email")
-                self.leerlingnummer= to_dict.get("leerlingnummer")
+                self.leerlingnummer = to_dict.get("leerlingnummer")
                 self.gender = "Male" if to_dict.get(
                     "geslacht") == "Man" else "Female"
                 year, month, day = to_dict.get("geboortedatum").split("-")
@@ -247,7 +291,7 @@ class School:
     NOT MEANT TO BE CREATED BY THE USER
     '''
 
-    def __init__(self, school_name: str, uuid: str) -> None:
+    def __init__(self, school_name: str, uuid: str):
         self.school_name = school_name
         self.school_uuid = uuid
         self.__failed_time = 0
@@ -265,11 +309,11 @@ class School:
             School: The school what it found
         """
         with requests.get("https://servers.somtoday.nl/organisaties.json",
-                          timeout=30)as school_response:
+                          timeout=30) as school_response:
             as_dict = school_response.json()
             instellingen = as_dict[0]["instellingen"]
             exists = tuple(filter(lambda school_: school_[
-                           "uuid"] == uuid, instellingen))
+                                                      "uuid"] == uuid, instellingen))
             if exists:
                 return School(exists[0]["naam"], uuid)
             else:
@@ -287,9 +331,9 @@ class School:
         return find_school(name)
 
     def get_student(self, name: str, password: str) -> Student:
-        """description: Get's the student by name and password(currently the only method)
+        """description: Gets the student by name and password(without SSO)
         Args:
-            name (str):  The student's name
+            name (str):  The student's name - The login name you use to login at inloggen.somtoday.nl
             password (str):  The student's password
 
         Raises:
@@ -301,10 +345,13 @@ class School:
         """
         if self.__failed_time > 10:
             raise ValueError("Credentials might be invalid. Please check")
-        cookies_saved: list | str = []
-        token = base64.urlsafe_b64encode(os.urandom(32)).rstrip(b'=').decode()
-        hashed = base64.urlsafe_b64encode(hashlib.sha256(
-            token.encode()).digest()).rstrip(b'=').decode()
+        cookies_saved = []
+        token = base64.urlsafe_b64encode(os.urandom(32)) \
+            .rstrip(b'=') \
+            .decode()
+        hashed = base64.urlsafe_b64encode(hashlib.sha256(token.encode()).digest()) \
+            .rstrip(b'=') \
+            .decode()
         payload = {
             "response_type": "code",
             "redirect_uri": "somtodayleerling://oauth/callback",
@@ -335,7 +382,7 @@ class School:
             "usernameFieldPanel:usernameFieldPanel_body:usernameField": name
         }, params={"-1.-panel-signInForm": "",
                    "auth": auth_token},
-            headers=post_headers, allow_redirects=False, cookies=cookies_saved, timeout=30)
+                                 headers=post_headers, allow_redirects=False, cookies=cookies_saved, timeout=30)
 
         cookies_saved = firstpos.cookies
         secondpos = requests.post(
@@ -354,7 +401,7 @@ class School:
             timeout=30
         )
         location2 = secondpos.headers.get('location')
-        code_as_return: str = None
+        code_as_return: str = ''
         if location2.startswith("somtodayleerling:"):
             parsed_url = urlparse(location2)
             code_as_return: str = parse_qs(parsed_url.query).get("code")[0]
@@ -382,23 +429,23 @@ class School:
                 self.__failed_time += 1
                 return self.get_student(name, password)
         last_response_payload = {
-            "grant_type":  "authorization_code",
+            "grant_type": "authorization_code",
             "scope": "openid",
             "client_id": "D50E0C06-32D1-4B41-A137-A9A850C892C2",
             "tenant_uuid": self.school_uuid,
             "session": "no_session",
             "code": code_as_return,
-            "code_verifier":  token
+            "code_verifier": token
         }
         last_response_headers = {
             "content-type": "application/x-www-form-urlencoded"
         }
-        last_response_final_response_ara_ara = requests.post(
+        last_response_final_response = requests.post(
             "https://inloggen.somtoday.nl/oauth2/token", data=last_response_payload,
             headers=last_response_headers,
             timeout=30)
-        if last_response_final_response_ara_ara.status_code == 200:
-            to_dict = last_response_final_response_ara_ara.json()
+        if last_response_final_response.status_code == 200:
+            to_dict = last_response_final_response.json()
             return Student(name=name,
                            password=password,
                            uuid=self.school_uuid,
@@ -408,10 +455,10 @@ class School:
                            refresh=to_dict["refresh_token"])
         else:
             raise requests.exceptions.RequestException(
-                f"request failed. request code {last_response_final_response_ara_ara.status_code}")
+                f"request failed. request code {last_response_final_response.status_code}")
 
 
-def find_school(school_name: str) -> School | None:
+def find_school(school_name: str) -> School:
     """description: Function that returns a school by name
 
     Args:
@@ -421,9 +468,9 @@ def find_school(school_name: str) -> School | None:
         ValueError: The school's name is incorrect.
 
     Returns:
-        School | None: The school  itself
+        School: The school  itself
     """
-    with requests.get("https://servers.somtoday.nl/organisaties.json", timeout=30)as schoolresponse:
+    with requests.get("https://servers.somtoday.nl/organisaties.json", timeout=30) as schoolresponse:
         response_as_dict = schoolresponse.json()
         final_result = tuple(filter(lambda school_dict: school_dict["naam"].lower(
         ) == school_name.lower(), response_as_dict[0]["instellingen"]))

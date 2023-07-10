@@ -1,14 +1,16 @@
 ***Somtoday Python, the interactor***
 
-***changes in 0.0.3***
+***changes in 0.0.4***
 <ul>
-<li>added PasFoto feature to get the PasFoto/Photo of the student.</li>
-<li>added new attribute: student.identifier for student's account's ID</li>
-<li>old student.identifier has been moved to student.leerlingnummer </li>
+<li> I got more lazier so I wanted to do announce this in Dutch </li>
+<li> Gefixt dat Student.fetch_schedule(group_by_day=True) dat het weer werkt(zat blijkbaar een bug in) </li>
+<li> Documentatie verbetert </li>
+<li> Er zat een probleem met Union types, gefixt </li>
+<li> Je kan 2 studenten vergelijken als Student.full_name en Student.school_name allebei gelijk zijn
+<li> Vergelijkingen met Cijfers(kijken als cijfers zijn hoger of lager) Cijfers worden bepaald door Cijfers.resultaat
+<li>beter __repr__ en __str__ voor Cijfer en Subject</li>
 </ul>
 
-
-> What the f**ck is this?
 
 this(somtoday python) is a package that fetches and interacts with somtoday API using https requests.
 

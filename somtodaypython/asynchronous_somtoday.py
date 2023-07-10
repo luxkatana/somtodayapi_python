@@ -1,48 +1,45 @@
 '''
 asynchronous support for somtoday API
 '''
+import asyncio
 import base64
 import os
 import string
 from . import nonasyncsomtoday as nonasync_smtd
 from urllib.parse import urlparse, parse_qs
 from datetime import datetime
+from dataclasses import dataclass
 import hashlib
 import random
 import httpx
+from typing import Union
+
+
 class PasFoto(nonasync_smtd.PasFoto):
     def __init__(self, b64url: str) -> None:
         super().__init__(b64url)
-    def save(self, save_to: nonasync_smtd.Path) -> bool | Exception:
-        return super().save(save_to)
+
+
+@dataclass
+
 class Cijfer(nonasync_smtd.Cijfer):
     def __init__(self, **kwargs) -> None:
         super().__init__(**kwargs)
-class Subject:
-    '''
-    Subject:
-    a model what represents a single school subject/hour
-    THIS IS NOT MEANT TO BE CREATED BY THE USER
-    '''
-    def __init__(self, **kwargs) -> None:
-        self.subject_name: int = kwargs.get("subject")
-        self.begin_time: datetime = kwargs.get("begindt")
-        self.end_time: datetime = kwargs.get("enddt")
-        self.subject_short: str = kwargs.get("subject_short")
-        self.begin_hour: int = kwargs.get("beginhour")
-        self.end_hour:  int = kwargs.get("endhour")
-        self.location: str = kwargs.get("location")
-        self.teacher_short: str = kwargs.get("teacher_shortcut")
-    def __repr__(self):
-        return f"{self.subject_name}"
-    def __str__(self):
-        return  self.__repr__()
 
-class Student:
+
+@dataclass
+
+class Subject(nonasync_smtd.Subject):
+
+    def __init__(self, **kwargs) -> None:
+        super().__init__(**kwargs)
+
+class Student(nonasync_smtd.Student):
     '''
     Model that presents a Student
     NOT MEANT TO BE CREATED BY USER
     '''
+
     def __init__(self, **kwargs) -> None:
         self.name: str = kwargs.get("name")
         self.password: str = kwargs.get("password")
@@ -51,16 +48,18 @@ class Student:
         self.auth_code: str = kwargs.get("auth_code")
         self.access_token: str = kwargs.get("access")
         self.refresh_token: str = kwargs.get("refresh")
-        self.school_subjects: list[Subject] |  list[list[Subject]] = []
+        self.school_subjects: list[Union[Subject, list[Subject]]] = []
         self.email: str
         self.full_name: str
         self.gender: str
-        self.user_id: int
+        self.cijfers: list[Cijfer]
         self.leerlingnummer: int
-        self.identifier: int
-        self.pasfoto: PasFoto
+        self.indentifier: int
         self.birth_datetime: datetime
         self.endpoint = "https://api.somtoday.nl"
+        self.pasfoto: PasFoto
+        self.dump_cache: dict[str]
+
     async def fetch_cijfers(self, lower_bound_range: int, upper_bound_range: int) -> list[Cijfer]:
         """fetches the cijfers and saves it to self.cijfers
 
@@ -73,12 +72,12 @@ class Student:
 
         Returns:
             list[Cijfer]: list of Cijfers
-        """        
+        """
         if lower_bound_range >= 100 or lower_bound_range <= 0:
             raise ValueError("lower_bound_range can't be negative or more than 100")
-        elif  upper_bound_range >= 100 or upper_bound_range <= 0:
+        elif upper_bound_range >= 100 or upper_bound_range <= 0:
             raise ValueError("upper_bound_range can't be negative or more than 100")
-        headers ={
+        headers = {
             "Accept": "Application/json",
             "Authorization": f"Bearer {self.access_token}",
             "Range": f"items={lower_bound_range}-{upper_bound_range}"
@@ -86,8 +85,9 @@ class Student:
         params = {
             "additional": ['berekendRapportCijfer']
         }
-        async with httpx.AsyncClient()as session:
-            response = await session.get(f"{self.endpoint}/rest/v1/resultaten/huidigVoorLeerling/{self.identifier}", params=params, headers=headers)
+        async with httpx.AsyncClient() as session:
+            response = await session.get(f"{self.endpoint}/rest/v1/resultaten/huidigVoorLeerling/{self.identifier}",
+                                         params=params, headers=headers)
             if response.status_code >= 200 and response.status_code < 300:
                 to_dict = response.json()
                 items: list[dict] = to_dict["items"]
@@ -106,10 +106,11 @@ class Student:
                         f"response returned status code {response.status_code} from {self.endpoint}/rest/v1/resultaten/huidigVoorLeerling/{self.identifier}"
                     ]
                 ])
+
     async def fetch_schedule(self,
                              begindt: datetime,
                              enddt: datetime,
-                             group_by_day: bool=False) ->  list[Subject]  | list[list[Subject]]:
+                             group_by_day: bool = False) -> list[Union[list[Subject], Subject]]:
         """description: fetches the timetable and saves it to self.school_subjects
         Args:
             begindt (datetime): starting date to fetch
@@ -125,16 +126,16 @@ class Student:
             "additional": ["vak", "docentAfkortingen"],
             "sort": "asc-beginDatumTijd"
         }
-        async with httpx.AsyncClient()as client:
+        async with httpx.AsyncClient() as client:
             response = await client.get(f"{self.endpoint}/rest/v1/afspraken",
                                         headers={"Accept": "application/json",
                                                  "Authorization": f"Bearer {self.access_token}"},
                                         params=params_payload)
             as_json = response.json()
-            items: list[dict] =  as_json["items"]
+            items: list[dict] = as_json["items"]
             self.school_subjects = []
             groups: dict[str, list[Subject]] = {}
-            for item  in items:
+            for item in items:
                 school_object_dict: dict = item.get("additionalObjects").get("vak")
                 afkorting = school_object_dict.get("afkorting")
                 subject_name: str = school_object_dict.get("naam")
@@ -153,11 +154,11 @@ class Student:
                                         location=locatie,
                                         teacher_shortcut=docent_afkorting)
                 if group_by_day and begin_time.strftime("%Y-%m-%d") in groups:
-                    group = groups.get(f"{begin_time.year}-{begin_time.month}-{begin_time.day}")
+                    group = groups.get(begin_time.strftime("%Y-%m-%d"))
                     group.append(target_object)
                 elif group_by_day and begin_time.strftime("%Y-%m-%d") not in groups:
                     new_group = {
-                        f"{begin_time.year}-{begin_time.month}-{begin_time.day}": [target_object,]
+                        begin_time.strftime("%Y-%m-%d"): [target_object]
                     }
                     groups.update(new_group)
                 else:
@@ -165,10 +166,8 @@ class Student:
             if group_by_day:
                 self.school_subjects = [groups.get(x) for x in groups]
             return self.school_subjects
-    def __repr__(self):
-        return f"{self.full_name}, {self.school_name}"
-    def __str__(self):
-        return self.__repr__()
+
+
     async def load_more_data(self) -> bool:
         '''
         function that loads data what will be saved by the self object.
@@ -176,38 +175,34 @@ class Student:
         if hasattr(self, "full_name"):
             return False
         else:
-            async with httpx.AsyncClient()as client:
+            async with httpx.AsyncClient() as client:
                 name_response = await client.get(f"{self.endpoint}/rest/v1/leerlingen",
                                                  headers={
                                                      "Authorization": f"Bearer {self.access_token}",
-                                                          "Accept": "application/json"},
+                                                     "Accept": "application/json"},
                                                  params={"additional": ["pasfoto", "leerlingen"]})
                 to_dict = name_response.json()
                 to_dict = to_dict["items"][0]
-                self.pasfoto  = PasFoto(to_dict["additionalObjects"]["pasfoto"]["datauri"])
+                self.pasfoto = PasFoto(to_dict["additionalObjects"]["pasfoto"]["datauri"])
                 self.full_name = to_dict.get("roepnaam") + " " + to_dict.get("achternaam")
-                self.identifier= to_dict.get("links")[0]["id"]
+                self.identifier = to_dict.get("links")[0]["id"]
                 self.email = to_dict.get("email")
                 self.leerlingnummer = to_dict.get("leerlingnummer")
                 self.gender = "Male" if to_dict.get("geslacht") == "Man" else "Female"
                 year, month, day = to_dict.get("geboortedatum").split("-")
                 self.birth_datetime = datetime(int(year), int(month), int(day))
             return True
-    @property
-    def school_object(self) -> "School":
-        '''
-        a School object that represents the student's school
-        '''
-        return  School(self.school_name, self.school_uuid)
-class School:
+
+
+class School(nonasync_smtd.School):
     '''
     Model that represents a school
     NOT  MEANT TO BE CREATED BY USER
     '''
-    def __init__(self, school_name: str, uuid: str) -> None:
-        self.school_name = school_name
-        self.school_uuid = uuid
-        self.__failed_time = 0
+
+    def __init__(self, *args) -> None:
+        super().__init__(*args)
+
     @staticmethod
     async def from_school_uuid(uuid: str) -> "School":
         """Gets a school by school uuid
@@ -221,29 +216,41 @@ class School:
         Returns:
             School: object that represents the School
         """
-        async with httpx.AsyncClient()as session:
+        async with httpx.AsyncClient() as session:
             school_response = await session.get("https://servers.somtoday.nl/organisaties.json")
-            as_dict =  school_response.json()
+            as_dict = school_response.json()
             instellingen = as_dict[0]["instellingen"]
             exists = tuple(filter(lambda school_: school_["uuid"] == uuid, instellingen))
             if exists:
                 return School(exists[0]["naam"], uuid)
             raise ValueError(f"Invalid  uuid: {uuid}")
+
     @staticmethod
     async def from_school_name(name: str) -> "School":
         '''
         get the School from_school name, alternative to find_school(name)
         '''
         return await find_school(name)
+
     async def get_student(self, name: str, password: str) -> Student:
-        '''
-        getting the student by name  & password
-        '''
+        """description: Gets the student by name and password(without SSO)
+        Args:
+            name (str):  The student's name - The login name you use to login at inloggen.somtoday.nl
+            password (str):  The student's password
+
+        Raises:
+            ValueError: Credentials are incorrect.
+            requests.exceptions.RequestException: Error at  last https request. Rarely happens.
+
+        Returns:
+            Student: The student self.
+        """
+
         if self.__failed_time > 10:
             raise ValueError("Credentials might be invalid. Please check")
-        cookies_saved: list | str = []
+        cookies_saved = []
         token = base64.urlsafe_b64encode(os.urandom(32)).rstrip(b'=').decode()
-        hashed = base64.urlsafe_b64encode(hashlib.sha256(token.encode()).digest()).rstrip(b'=')\
+        hashed = base64.urlsafe_b64encode(hashlib.sha256(token.encode()).digest()).rstrip(b'=') \
             .decode()
         payload = {
             "response_type": "code",
@@ -257,15 +264,15 @@ class School:
             "session": "no_session"
 
         }
-        async with httpx.AsyncClient()as client:
+        async with httpx.AsyncClient() as client:
             response = await client.get("https://inloggen.somtoday.nl/oauth2/authorize",
                                         params=payload,
                                         follow_redirects=False)
-            cookies_saved  = response.cookies
+            cookies_saved = response.cookies
             parsed = urlparse(response.headers.get("location"))
             auth_token = parse_qs(parsed.query).get("auth")[0]
 
-            post_headers =  {
+            post_headers = {
                 "content-type": "application/x-www-form-urlencoded",
                 "origin": "https://inloggen.somtoday.nl"
             }
@@ -273,10 +280,10 @@ class School:
                 "loginLink": "x",
                 "usernameFieldPanel:usernameFieldPanel_body:usernameField": name
             }, params={"-1.-panel-signInForm": "",
-                    "auth": auth_token},
-                                    headers=post_headers,
-                                    follow_redirects=False,
-                                    cookies=cookies_saved)
+                       "auth": auth_token},
+                                         headers=post_headers,
+                                         follow_redirects=False,
+                                         cookies=cookies_saved)
 
             cookies_saved = firstpos.cookies
             secondpos = await client.post(
@@ -288,7 +295,7 @@ class School:
                 headers=post_headers,
                 params={
                     "1-1.-passwordForm": "",
-                    "auth":auth_token
+                    "auth": auth_token
                 },
                 cookies=cookies_saved,
                 follow_redirects=False
@@ -308,7 +315,7 @@ class School:
                     headers=post_headers,
                     params={
                         "1-1.-passwordForm": "",
-                        "auth":auth_token
+                        "auth": auth_token
                     },
                     cookies=cookies_saved,
                     allow_redirects=False
@@ -321,7 +328,7 @@ class School:
                     self.__failed_time += 1
                     return await self.get_student(name, password)
             last_response_payload = {
-                "grant_type":  "authorization_code",
+                "grant_type": "authorization_code",
                 "scope": "openid",
                 "client_id": "D50E0C06-32D1-4B41-A137-A9A850C892C2",
                 "tenant_uuid": self.school_uuid,
@@ -333,23 +340,25 @@ class School:
                 "content-type": "application/x-www-form-urlencoded"
             }
             final_response = await client.post("https://inloggen.somtoday.nl/oauth2/token",
-                                                                     data=last_response_payload,
-                                                                     headers=last_response_headers)
+                                               data=last_response_payload,
+                                               headers=last_response_headers)
             if final_response.status_code == 200:
-                to_dict =  final_response.json()
+                to_dict = final_response.json()
                 new_student_created = Student(name=name,
-                             password=password,
-                             uuid=self.school_uuid,
-                             literal_school=self.school_name,
-                             auth_code=auth_token,
-                             access=to_dict["access_token"],
-                             refresh=to_dict["refresh_token"])
+                                              password=password,
+                                              uuid=self.school_uuid,
+                                              literal_school=self.school_name,
+                                              auth_code=auth_token,
+                                              access=to_dict["access_token"],
+                                              refresh=to_dict["refresh_token"])
                 await new_student_created.load_more_data()
                 return new_student_created
 
             else:
                 raise ValueError(f"request failed: code {final_response.status_code}")
-async def find_school(school_name: str) -> School | None:
+
+
+async def find_school(school_name: str) -> School:
     """gets & returns a School object, alternative to School.from_school_name(name)
     Args:
         school_name (str): name of the school
@@ -358,14 +367,14 @@ async def find_school(school_name: str) -> School | None:
         ValueError: School is not registered by somtoday or school_name invalid
 
     Returns:
-        School | None: The School model  representation
+        School: The School model  representation
     """
-    async with httpx.AsyncClient()as client:
+    async with httpx.AsyncClient() as client:
         schoolresponse = await client.get("https://servers.somtoday.nl/organisaties.json")
         response_as_dict = schoolresponse.json()
         final_result = tuple(filter(
             lambda school_dict: school_dict["naam"].lower() == school_name.lower(),
-                                    response_as_dict[0]["instellingen"]))
+            response_as_dict[0]["instellingen"]))
         if final_result:
             return School(school_name, final_result[0]["uuid"])
         else:

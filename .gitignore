@@ -5,3 +5,5 @@
 /.env
 /test.*
 /*.json
+/.idea
+/tests/__pycache__/
