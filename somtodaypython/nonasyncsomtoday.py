@@ -128,12 +128,13 @@ class Student:
             return self.name == __value.name and self.school_name == __value.school_name
         return NotImplemented
 
-    def fetch_cijfers(self, lower_bound_range: int, upper_bound_range: int) -> list[Cijfer]:
+    def fetch_cijfers(self, lower_bound_range: int, upper_bound_range: int, doyield: bool=False) -> list[Cijfer]:
         """fetches the cijfers and saves it to self.cijfers
 
         Args:
             lower_bound_range (int): minimum to return must be greater than 0  and fewer than 100
             upper_bound_range (int): maximum to return(must be fewer than 100)
+            doyield (bool): Yield each Cijfer
         Raises:
             ValueError: lower_boung_range or upper_boung_range is negative or more than 100
             ExceptionGroup: status code is not what is expected
@@ -164,9 +165,13 @@ class Student:
                 resultaat = item.get("resultaat", "0")
                 leerjaar = item['leerjaar']
                 vak = item["vak"]["naam"]
-                self.cijfers.append(Cijfer(vak=vak, datum=tijd_nagekeken, leerjaar=leerjaar, resultaat=resultaat))
+                cijfer_Object: Cijfer = Cijfer(vak=vak, datum=tijd_nagekeken, leerjaar=leerjaar, resultaat=resultaat)
+                self.cijfers.append(cijfer_Object)
+                if doyield:
+                    yield self.cijfers[-1]
             self.dump_cache = to_dict
-            return self.cijfers
+            if not doyield:
+                return self.cijfers
         else:
             raise ExceptionGroup("error", [
                 [
@@ -177,12 +182,13 @@ class Student:
     def fetch_schedule(self,
                        begindt: datetime,
                        enddt: datetime,
-                       group_by_day: bool = False) -> list[Union[Subject, list[Subject]]]:
+                       group_by_day: bool = False, doyield=False) -> list[Union[Subject, list[Subject]]]:
         """description: fetches the timetable and saves it to self.school_subjects
         Args:
             begindt (datetime): starting date to fetch
             enddt (datetime):   ending date to fetch
             group_by_day (bool, optional): to group it  by day. Defaults to False.
+            doyield  (bool): Yield each iteration with list[Subject] or Subject
 
         Returns:
             list[Subject]  | list[list[Subject]]:  list what contains Subjects or a grouped Subjects
@@ -235,9 +241,12 @@ class Student:
                     groups.update(new_group)
                 else:
                     self.school_subjects.append(target_object)
+                if doyield:
+                    yield target_object
             if group_by_day:
                 self.school_subjects = [groups.get(x) for x in groups]
-            return self.school_subjects
+            if not doyield:
+                return self.school_subjects
 
     def __repr__(self):
         return f"{self.full_name}, {self.school_name}"

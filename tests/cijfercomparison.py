@@ -2,15 +2,19 @@ import unittest
 import somtodaypython.nonasyncsomtoday as nonasyncsomtoday
 from os import getenv
 
+SCHOOL = getenv('SCHOOL')
+NAAM: str = str(getenv("NAAM"))
+PASSWORD: str = getenv("PASSWORD")
+school: nonasyncsomtoday.School = nonasyncsomtoday.find_school(SCHOOL)
+student = school.get_student(NAAM, PASSWORD)
+
 
 class CijferComparison(unittest.TestCase):
+    def test_cijferyielding(self):
+        for cijfer in student.fetch_cijfers(1, 10, True):
+            print(cijfer)
 
     def test_main(self):
-        SCHOOL = getenv('SCHOOL')
-        NAAM: str = str(getenv("NAAM"))
-        PASSWORD: str = getenv("PASSWORD")
-        school: nonasyncsomtoday.School = nonasyncsomtoday.find_school(SCHOOL)
-        student = school.get_student(NAAM, PASSWORD)
         cijfers = student.fetch_cijfers(1, 10)
         if len(cijfers) >= 2:
             cijfer1  = cijfers[0]

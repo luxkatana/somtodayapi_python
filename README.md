@@ -9,10 +9,12 @@
 <li> Je kan 2 studenten vergelijken als Student.full_name en Student.school_name allebei gelijk zijn
 <li> Vergelijkingen met Cijfers(kijken als cijfers zijn hoger of lager) Cijfers worden bepaald door Cijfers.resultaat
 <li>beter __repr__ en __str__ voor Cijfer en Subject</li>
+<li>doyield parameter voor het maken van een generator bij nonasyncsomtoday.Student.fetch_cijfers()</li>
+<li>doyield parameter voor het maken van een generator bij anonasyncsomtoday.Student.fetch_schedule()</li>
 </ul>
 
 
-this(somtoday python) is a package that fetches and interacts with somtoday API using https requests.
+somtodaypython is a package that fetches and interacts with Somtoday API using https requests.
 
 **installation**
 
@@ -54,10 +56,10 @@ tomorrow = today + timedelta(days=2)
 timetable: list[list[nonasync_somtoday.Subject]] = student.fetch_schedule(today, tomorrow, group_by_day=True)
 for day in timetable:
     for day_subject in day:
-        print(day_subect.subject_name)
+        print(day_subject.subject_name)
 ```
 
-**Asynchronous suppport**
+**Asynchronous support**
 
 We also support asynchronous for somtodaypython.
 

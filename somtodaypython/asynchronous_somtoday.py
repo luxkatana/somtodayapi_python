@@ -99,7 +99,6 @@ class Student(nonasync_smtd.Student):
                     vak = item["vak"]["naam"]
                     self.cijfers.append(Cijfer(vak=vak, datum=tijd_nagekeken, leerjaar=leerjaar, resultaat=resultaat))
                 self.dump_cache = to_dict
-                return self.cijfers
             else:
                 raise ExceptionGroup("error", [
                     [
