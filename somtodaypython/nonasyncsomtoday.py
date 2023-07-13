@@ -127,16 +127,30 @@ class Student:
         if isinstance(__value, Student):
             return self.name == __value.name and self.school_name == __value.school_name
         return NotImplemented
+    def yield_fetch_cijfers(self, lower_bound_range: int, upper_bound_range: int) -> None:
+        """yields the cijfers by calling self.fetch_cijfers() and yielding it results
+        Args:
+            lower_bound_range (int):  minimum to return (must be greater than 0 and fewer than 100)
+            upper_bound_range (int):  maximum to return (must be fewer than 100)
 
-    def fetch_cijfers(self, lower_bound_range: int, upper_bound_range: int, doyield: bool=False) -> list[Cijfer]:
+        Yields:
+            cijfer: Cijfer object
+        """        
+        
+        cijfers = self.fetch_cijfers(lower_bound_range, upper_bound_range)
+        for cijfer in cijfers:
+
+            yield cijfer
+
+
+    def fetch_cijfers(self, lower_bound_range: int, upper_bound_range: int) -> list[Cijfer]:
         """fetches the cijfers and saves it to self.cijfers
 
         Args:
-            lower_bound_range (int): minimum to return must be greater than 0  and fewer than 100
-            upper_bound_range (int): maximum to return(must be fewer than 100)
-            doyield (bool): Yield each Cijfer
+            lower_bound_range (int): minimum to return (must be greater than 0 and fewer than 100)
+            upper_bound_range (int): maximum to return (must be fewer than 100)
         Raises:
-            ValueError: lower_boung_range or upper_boung_range is negative or more than 100
+            ValueError: lower_bound_range or upper_boung_range is negative or more than 100
             ExceptionGroup: status code is not what is expected
 
         Returns:
@@ -167,28 +181,39 @@ class Student:
                 vak = item["vak"]["naam"]
                 cijfer_Object: Cijfer = Cijfer(vak=vak, datum=tijd_nagekeken, leerjaar=leerjaar, resultaat=resultaat)
                 self.cijfers.append(cijfer_Object)
-                if doyield:
-                    yield self.cijfers[-1]
             self.dump_cache = to_dict
-            if not doyield:
-                return self.cijfers
+            return self.cijfers
         else:
             raise ExceptionGroup("error", [
                 [
                     f"response returned status code {response.status_code} from {self.endpoint}/rest/v1/resultaten/huidigVoorLeerling/{self.indentifier}"
                 ]
             ])
+    
+    def yield_fetch_schedule(self,
+                             begindt: datetime,
+                             enddt: datetime,
+                             group_by_day: bool = False):
+        """Yielding each ``Subject`` object 
+
+        Args:
+            begindt (datetime): starting date to fetch
+            enddt (datetime): ending date to fetch
+            group_by_day (bool, optional): to group it by day. Defaults to False.
+        """        
+        schedule = self.fetch_schedule(begindt, enddt, group_by_day)
+        for subject in schedule:
+            yield subject
 
     def fetch_schedule(self,
                        begindt: datetime,
                        enddt: datetime,
-                       group_by_day: bool = False, doyield=False) -> list[Union[Subject, list[Subject]]]:
+                       group_by_day: bool = False) -> list[Union[Subject, list[Subject]]]:
         """description: fetches the timetable and saves it to self.school_subjects
         Args:
             begindt (datetime): starting date to fetch
             enddt (datetime):   ending date to fetch
-            group_by_day (bool, optional): to group it  by day. Defaults to False.
-            doyield  (bool): Yield each iteration with list[Subject] or Subject
+            group_by_day (bool, optional): to group it by day. Defaults to False.
 
         Returns:
             list[Subject]  | list[list[Subject]]:  list what contains Subjects or a grouped Subjects
@@ -241,12 +266,9 @@ class Student:
                     groups.update(new_group)
                 else:
                     self.school_subjects.append(target_object)
-                if doyield:
-                    yield target_object
             if group_by_day:
                 self.school_subjects = [groups.get(x) for x in groups]
-            if not doyield:
-                return self.school_subjects
+            return self.school_subjects
 
     def __repr__(self):
         return f"{self.full_name}, {self.school_name}"

@@ -60,6 +60,22 @@ class Student(nonasync_smtd.Student):
         self.pasfoto: PasFoto
         self.dump_cache: dict[str]
 
+    async def yield_fetch_cijfers(self, lower_bound_range: int, upper_bound_range: int):
+        """yields the cijfers by calling self.fetch_cijfers() and yielding it results
+
+        Args:
+            lower_bound_range (int):  minimum to return (must be greater than 0 and fewer than 100)
+            upper_bound_range (int):  maximum to return (must be fewer than 100)
+
+        Yields:
+            cijfer: Cijfer object
+        """        
+        
+        cijfers = await self.fetch_cijfers(lower_bound_range, upper_bound_range)
+        for cijfer in cijfers:
+            yield cijfer
+
+
     async def fetch_cijfers(self, lower_bound_range: int, upper_bound_range: int) -> list[Cijfer]:
         """fetches the cijfers and saves it to self.cijfers
 
@@ -99,6 +115,7 @@ class Student(nonasync_smtd.Student):
                     vak = item["vak"]["naam"]
                     self.cijfers.append(Cijfer(vak=vak, datum=tijd_nagekeken, leerjaar=leerjaar, resultaat=resultaat))
                 self.dump_cache = to_dict
+                return self.cijfers
             else:
                 raise ExceptionGroup("error", [
                     [
@@ -106,6 +123,21 @@ class Student(nonasync_smtd.Student):
                     ]
                 ])
 
+    async def yield_fetch_schedule(self,
+                             begindt: datetime,
+                             enddt: datetime,
+                             group_by_day: bool = False):
+        """Yielding each ``Subject`` object 
+
+        Args:
+            begindt (datetime): starting date to fetch
+            enddt (datetime): ending date to fetch
+            group_by_day (bool, optional): to group it by day. Defaults to False.
+
+        """        
+        schedule = await self.fetch_schedule(begindt, enddt, group_by_day)
+        for subject in schedule:
+            yield subject
     async def fetch_schedule(self,
                              begindt: datetime,
                              enddt: datetime,

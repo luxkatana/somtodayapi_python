@@ -11,7 +11,7 @@ student = school.get_student(NAAM, PASSWORD)
 
 class CijferComparison(unittest.TestCase):
     def test_cijferyielding(self):
-        for cijfer in student.fetch_cijfers(1, 10, True):
+        for  cijfer in student.yield_fetch_cijfers(1, 10):
             print(cijfer)
 
     def test_main(self):

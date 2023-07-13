@@ -2,15 +2,15 @@
 
 ***changes in 0.0.4***
 <ul>
-<li> I got more lazier so I wanted to do announce this in Dutch </li>
+<li> I got more lazier so I wanted to announce this in Dutch </li>
 <li> Gefixt dat Student.fetch_schedule(group_by_day=True) dat het weer werkt(zat blijkbaar een bug in) </li>
 <li> Documentatie verbetert </li>
 <li> Er zat een probleem met Union types, gefixt </li>
 <li> Je kan 2 studenten vergelijken als Student.full_name en Student.school_name allebei gelijk zijn
 <li> Vergelijkingen met Cijfers(kijken als cijfers zijn hoger of lager) Cijfers worden bepaald door Cijfers.resultaat
 <li>beter __repr__ en __str__ voor Cijfer en Subject</li>
-<li>doyield parameter voor het maken van een generator bij nonasyncsomtoday.Student.fetch_cijfers()</li>
-<li>doyield parameter voor het maken van een generator bij anonasyncsomtoday.Student.fetch_schedule()</li>
+<li>Cijfers resultaat yielden is mogelijk door Student.yield_fetch_cijfers() te doen (ook met asynchronous)</li>
+<li>Rooster vakken yielden is mogelijk door Student.yield_fetch_schedule() te doen (ook met asynchronous)</li>
 </ul>
 
 
@@ -34,6 +34,11 @@ python -m pip install somtodaypython
 if neither above works then you can always do this
 ```
 pip3 install git+https://github.com/luxkatana/somtodayapi_python
+```
+
+If you want to try beta versions do this
+```
+pip3 install git+https://github.com/luxkatana/somtodayapi_python/dev
 ```
 ***examples***
 
