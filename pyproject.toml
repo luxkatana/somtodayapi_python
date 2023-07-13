@@ -1,0 +1,15 @@
+[build-system]
+requires = ["setuptools", "wheel"]
+build-backend = "setuptools.build_meta"
+
+[tool.poetry]
+name = "somtodaypython"
+version = "0.0.4"
+description = "Python package for interacting & fetching somtoday's data."
+authors = ["luxkatana taseen.bibi@gmail.com"]
+
+[tool.poetry.dependencies]
+python = "^3.8"
+requests = "^2.30.0"
+httpx = "0.24.1"
+
