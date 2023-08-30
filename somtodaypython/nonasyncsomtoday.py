@@ -410,28 +410,14 @@ class School:
         }
         firstpos = requests.post("https://inloggen.somtoday.nl/", data={
             "loginLink": "x",
-            "usernameFieldPanel:usernameFieldPanel_body:usernameField": name
+            "usernameFieldPanel:usernameFieldPanel_body:usernameField": name,
+            "passwordFieldPanel:passwordFieldPanel_body:passwordField": password
         }, params={"-1.-panel-signInForm": "",
-                   "auth": auth_token},
+                   "auth": auth_token, "1-1.-passwordForm": ""},
                                  headers=post_headers, allow_redirects=False, cookies=cookies_saved, timeout=30)
 
         cookies_saved = firstpos.cookies
-        secondpos = requests.post(
-            "https://inloggen.somtoday.nl/login",
-            data={
-                "loginLink": "x",
-                "passwordFieldPanel:passwordFieldPanel_body:passwordField": password
-            },
-            headers=post_headers,
-            params={
-                "1-1.-passwordForm": "",
-                "auth": auth_token
-            },
-            cookies=cookies_saved,
-            allow_redirects=False,
-            timeout=30
-        )
-        location2 = secondpos.headers.get('location')
+        location2 = firstpos.headers.get('location')
         code_as_return: str = ''
         if location2.startswith("somtodayleerling:"):
             parsed_url = urlparse(location2)
