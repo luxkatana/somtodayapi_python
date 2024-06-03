@@ -1,4 +1,5 @@
 ***Somtoday Python, the interactor***
+***This package has been deprecated :(***
 
 ***changes in 0.0.4***
 <ul>
