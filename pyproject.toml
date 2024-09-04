@@ -10,6 +10,5 @@ authors = ["luxkatana taseen.bibi@gmail.com"]
 
 [tool.poetry.dependencies]
 python = "^3.8"
-requests = "^2.30.0"
 httpx = "0.24.1"
 

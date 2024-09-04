@@ -1,21 +1,14 @@
 ***Somtoday Python, the interactor***
-***This package has been deprecated :(***
 
-***changes in 0.0.4***
-<ul>
-<li> I got more lazier so I wanted to announce this in Dutch </li>
-<li> Gefixt dat Student.fetch_schedule(group_by_day=True) dat het weer werkt(zat blijkbaar een bug in) </li>
-<li> Documentatie verbetert </li>
-<li> Er zat een probleem met Union types, gefixt </li>
-<li> Je kan 2 studenten vergelijken als Student.full_name en Student.school_name allebei gelijk zijn
-<li> Vergelijkingen met Cijfers(kijken als cijfers zijn hoger of lager) Cijfers worden bepaald door Cijfers.resultaat
-<li>beter __repr__ en __str__ voor Cijfer en Subject</li>
-<li>Cijfers resultaat yielden is mogelijk door Student.yield_fetch_cijfers() te doen (ook met asynchronous)</li>
-<li>Rooster vakken yielden is mogelijk door Student.yield_fetch_schedule() te doen (ook met asynchronous)</li>
-</ul>
+***Changed my mind, somtodaypython is back alive***
+
+***A big revamp has been made, I am planning to add SSO authentication.***
 
 
-somtodaypython is a package that fetches and interacts with Somtoday API using https requests.
+***asynchronous support for somtodaypython has been deprecated***
+
+
+somtodaypython is a package that fetches and interacts with Somtoday API using HTTPS requests.
 
 **installation**
 
@@ -37,10 +30,6 @@ if neither above works then you can always do this
 pip3 install git+https://github.com/luxkatana/somtodayapi_python
 ```
 
-If you want to try beta versions do this
-```
-pip3 install git+https://github.com/luxkatana/somtodayapi_python/dev
-```
 ***examples***
 
 *basic interacting with a student(getting data from the student)*
@@ -65,45 +54,10 @@ for day in timetable:
         print(day_subject.subject_name)
 ```
 
-**Asynchronous support**
-
-We also support asynchronous for somtodaypython.
-
-*Basic interacting with a student(asynchronous)*
-```py
-import somtodaypython.asynchronous_somtoday as async_somtoday
-import  asyncio # builtin library for asynchronous execution
-async def main() -> None:
-    school = await async_somtoday.find_school("SCHOOLNAME")
-    student = await school.get_student("NAME", "PASSWORD")
-    print(student.full_name)
-asyncio.get_event_loop().run_until_complete(main()) # executing the main() function
-```
-
-*Basic interacting with a student's timetable(asynchronous)*
-
-```py
-
-import somtodaypython.asynchronous_somtoday as async_somtoday
-from datetime import timedelta,datetime as dt
-import  asyncio # builtin library for asynchronous execution
-async def main() -> None:
-    now = dt.now()
-    tomorrow = now + timedelta(days=2)
-    school = await async_somtoday.find_school("SCHOOLNAME")
-    student = await school.get_student("NAME", "PASSWORD")
-    timetable: list[list[async_somtoday.Subject]] = await student.fetch_schedule(now, tomorrow, group_by_day=True)
-    for day in timetable:
-        for  subject in day:
-            print(subject.subject_name)
-asyncio.get_event_loop().run_until_complete(main()) # executing the main() function
-```
+**Contribution**
 
 
-**Ending**
-
-
-New features are always welcome! email taseen.bibi@gmail.com
+New PR's are welcome.
 
 
 **Huizengek#6623**
