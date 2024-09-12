@@ -93,6 +93,16 @@ class Subject:
         self.end_hour: int = kwargs.get("endhour")
         self.location: str = kwargs.get("location")
         self.teacher_short: str = kwargs.get("teacher_shortcut")
+    
+    def diff(self, other: "Subject") -> dict[str, Union[str, int, datetime]]:
+        return_dict = {}
+
+        for key, value in self.__dict__.items():
+            if value != other.__dict__[key]:
+                return_dict[key] = value
+        return return_dict
+    def __hash__(self) -> int:
+        return hash(self.subject_name) + hash(self.begin_time) + hash(self.end_time) + hash(self.subject_short) + hash(self.begin_hour) + hash(self.end_hour) + hash(self.location) + hash(self.teacher_short)
 
 
 class Student:
@@ -314,6 +324,7 @@ class Student:
             School: The School where the student has been fetched.
         """
         return School(self.school_name, self.school_uuid)
+
 
 
 class School:

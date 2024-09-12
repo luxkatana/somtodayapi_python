@@ -7,3 +7,5 @@
 /*.json
 /.idea
 /tests/__pycache__/
+/dist
+/somtodaypython.egg-info
