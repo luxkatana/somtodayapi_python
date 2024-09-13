@@ -4,6 +4,7 @@ Module that provide non-asynchronous functions for using the somtoday API
 '''
 import base64
 import re
+import pytz
 from typing import Any, Union, Generator
 from pathlib import Path
 from datetime import datetime
@@ -14,6 +15,7 @@ from string import ascii_lowercase, digits
 from urllib.parse import urlparse, parse_qs
 import httpx
 
+CET = pytz.timezone("Europe/Amsterdam")
 
 class PasFoto:
     def __init__(self, b64url: str):
@@ -94,13 +96,6 @@ class Subject:
         self.location: str = kwargs.get("location")
         self.teacher_short: str = kwargs.get("teacher_shortcut")
     
-    def diff(self, other: "Subject") -> dict[str, Union[str, int, datetime]]:
-        return_dict = {}
-
-        for key, value in self.__dict__.items():
-            if value != other.__dict__[key]:
-                return_dict[key] = value
-        return return_dict
     def __hash__(self) -> int:
         return hash(self.subject_name) + hash(self.begin_time) + hash(self.end_time) + hash(self.subject_short) + hash(self.begin_hour) + hash(self.end_hour) + hash(self.location) + hash(self.teacher_short)
 
@@ -185,7 +180,7 @@ class Student:
             items: list[dict] = to_dict["items"]
             self.cijfers = []
             for item in items:
-                tijd_nagekeken = datetime.fromisoformat(item["datumInvoer"])
+                tijd_nagekeken = datetime.fromisoformat(item["datumInvoer"]).replace(tzinfo=CET)
                 resultaat = item.get("resultaat", "0")
                 leerjaar = item['leerjaar']
                 vak = item["vak"]["naam"]
@@ -254,9 +249,9 @@ class Student:
             docent_afkorting: str = item.get(
                 "additionalObjects").get("docentAfkortingen")
             begin_time: datetime = datetime.fromisoformat(
-                item.get("beginDatumTijd"))
+                item.get("beginDatumTijd")).replace(tzinfo=CET)
             end_time: datetime = datetime.fromisoformat(
-                item.get("eindDatumTijd"))
+                item.get("eindDatumTijd")).replace(tzinfo=CET)
             target_object = Subject(subject=subject_name,
                                     begindt=begin_time,
                                     enddt=end_time,
@@ -313,7 +308,7 @@ class Student:
             self.gender = "Male" if to_dict.get(
                 "geslacht") == "Man" else "Female"
             year, month, day = to_dict.get("geboortedatum").split("-")
-            self.birth_datetime = datetime(int(year), int(month), int(day))
+            self.birth_datetime = datetime(int(year), int(month), int(day), tzinfo=CET)
         return True
 
     @property

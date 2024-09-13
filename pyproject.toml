@@ -4,11 +4,11 @@ build-backend = "setuptools.build_meta"
 
 [tool.poetry]
 name = "somtodaypython"
-version = "1.0.1"
+version = "1.0.3"
 description = "Python package for interacting & fetching somtoday's data."
 authors = ["luxkatana taseen.bibi@gmail.com"]
 
 [tool.poetry.dependencies]
 python = "^3.8"
 httpx = "0.24.1"
-
+pytz = "2024.2"

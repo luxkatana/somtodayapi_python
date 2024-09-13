@@ -3,7 +3,7 @@ setup.py for installing this package do python3 setup.py install.
 '''
 from setuptools import setup, find_packages
 
-VERSION = '1.0.1'
+VERSION = '1.0.3'
 DESCRIPTION = 'Python package for interacting & fetching somtoday\'s data.'
 
 with open("./README.md", "r", encoding="utf-8")as file:
@@ -18,6 +18,6 @@ setup(
         author_email="taseen.bibi@gmail.com",
         description=DESCRIPTION,
         packages=find_packages(),
-        install_requires=['httpx'], # add any additional packages that
+        install_requires=['httpx', 'pytz'], # add any additional packages that
         url="https://github.com/luxkatana/somtodayapi_python",
 )
