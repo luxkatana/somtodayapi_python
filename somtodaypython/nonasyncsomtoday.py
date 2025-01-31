@@ -398,8 +398,8 @@ class School:
             response = session.get(
                 "https://inloggen.somtoday.nl/oauth2/authorize",
                 params={
-                    "redirect_uri": "somtodayleerling://oauth/callback",
-                    "client_id": "D50E0C06-32D1-4B41-A137-A9A850C892C2",
+                    "redirect_uri": "somtoday://nl.topicus.somtoday.leerling/oauth/callback",
+                    "client_id": "somtoday-leerling-native",
                     "state": self._generate_random_str(8),
                     "response_type": "code",
                     "scope": "openid",
@@ -448,7 +448,7 @@ class School:
                     "grant_type": "authorization_code",
                     "session": "no_session",
                     "scope": "openid",
-                    "client_id": "D50E0C06-32D1-4B41-A137-A9A850C892C2",
+                    "client_id": "somtoday-leerling-native",
                     "tenant_uuid": self.school_uuid,
                     "code": self.parse_query_url('code', callback_oauth),
                     "code_verifier": codeVerifier,
@@ -467,7 +467,7 @@ class School:
                 access=response_json["access_token"],
                 refresh=response_json["refresh_token"])
             else:
-                raise Exception('todo')
+                raise Exception("Credentials may be incorrect")
                 
             
         # if last_response_final_response.status_code == 200:
