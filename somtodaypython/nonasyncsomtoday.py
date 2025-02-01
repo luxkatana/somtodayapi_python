@@ -423,7 +423,6 @@ class School:
                 
             )
             if 'auth=' in response.headers['Location']: # username + password directly 
-                    print(session.cookies)
                     data = {
                         "loginLink": "x",
                         "usernameFieldPanel:usernameFieldPanel_body:usernameField": name,
