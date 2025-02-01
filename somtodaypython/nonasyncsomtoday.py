@@ -4,6 +4,7 @@ Module that provide non-asynchronous functions for using the somtoday API
 '''
 import base64
 import re
+import requests
 import pytz
 from typing import Any, Union, Generator
 from pathlib import Path
@@ -13,7 +14,6 @@ from hashlib import sha256
 from random import choice
 from string import ascii_lowercase, digits
 from urllib.parse import urlparse, parse_qs
-import httpx
 
 CET = pytz.timezone("Europe/Amsterdam")
 
@@ -104,8 +104,11 @@ class Student:
     '''
     Student:
         Model that represents a Student
-        THIS IS NOT MEANT TO BE CREATED BY THE USER
     '''
+
+    @classmethod
+    def from_access_token(cls, access_token: str) -> "Student":
+        return cls(access=access_token)
 
     def __init__(self, **kwargs):
         self.name: str = kwargs.get("name")
@@ -173,7 +176,7 @@ class Student:
         params = {
             "additional": ['berekendRapportCijfer']
         }
-        response = httpx.get(f"{self.endpoint}/rest/v1/resultaten/huidigVoorLeerling/{self.indentifier}",
+        response = requests.get(f"{self.endpoint}/rest/v1/resultaten/huidigVoorLeerling/{self.indentifier}",
                                 params=params, headers=headers)
         if response.status_code >= 200 and response.status_code < 300:
             to_dict = response.json()
@@ -189,11 +192,9 @@ class Student:
             self.dump_cache = to_dict
             return self.cijfers
         else:
-            raise ExceptionGroup("error", [
-                [
+            raise Exception(
                     f"response returned status code {response.status_code} from {self.endpoint}/rest/v1/resultaten/huidigVoorLeerling/{self.indentifier}"
-                ]
-            ])
+            )
     
     def yield_fetch_schedule(self,
                              begindt: datetime,
@@ -229,7 +230,7 @@ class Student:
             "additional": ["vak", "docentAfkortingen"],
             "sort": "asc-beginDatumTijd"
         }
-        response = httpx.get(f"{self.endpoint}/rest/v1/afspraken",
+        response = requests.get(f"{self.endpoint}/rest/v1/afspraken",
                           headers={"Accept": "application/json",
                                    "Authorization": f"Bearer {self.access_token}"},
                           params=params_payload,
@@ -290,7 +291,7 @@ class Student:
         if hasattr(self, "full_name"):
             return False
         else:
-            name_response = httpx.get(f"{self.endpoint}/rest/v1/leerlingen",
+            name_response = requests.get(f"{self.endpoint}/rest/v1/leerlingen",
                               headers={
                                   "Authorization":
                                       f"Bearer {self.access_token}",
@@ -344,7 +345,7 @@ class School:
         Returns:
             School: The school what it found
         """
-        school_response = httpx.get("https://servers.somtoday.nl/organisaties.json",
+        school_response = requests.get("https://servers.somtoday.nl/organisaties.json",
                           timeout=30)
         as_dict = school_response.json()
         instellingen = as_dict[0]["instellingen"]
@@ -382,13 +383,13 @@ class School:
 
         Raises:
             ValueError: Credentials are incorrect.
-            httpx.exceptions.RequestException: Error at  last https request. Rarely happens.
+            requests.exceptions.RequestException: Error at  last https request. Rarely happens.
 
         Returns:
             Student: The student self.
         """
 
-        with httpx.Client(follow_redirects=False) as session:
+        with requests.Session() as session:
             codeVerifier: str = self._generate_random_str(128)
             codeChallenge = base64.b64encode(sha256(codeVerifier.encode()).digest()).decode()
             codeChallenge = re.sub(r"\+", "-", codeChallenge)
@@ -405,18 +406,24 @@ class School:
                     "scope": "openid",
                     "tenant_uuid": self.school_uuid,
                     "session": "no_session",
-                    "code_challenge": codeChallenge,  # TODO
+                    "code_challenge": codeChallenge,
                     "code_challenge_method": "S256",
                 },
+                allow_redirects=False
+                
             )
-            session.get(response.headers['location'])
-            authorization_code = self.parse_query_url("auth", response.headers['location'])
+            session.get(response.headers['Location'],
+                allow_redirects=False)
+            authorization_code = self.parse_query_url("auth", response.headers['Location'])[0]
             response = session.post(
                 "https://inloggen.somtoday.nl/?0-1.-panel-signInForm",
                 params={"auth": authorization_code},
                 headers={"origin": "https://inloggen.somtoday.nl"},
+                allow_redirects=False
+                
             )
             if 'auth=' in response.headers['Location']: # username + password directly 
+                    print(session.cookies)
                     data = {
                         "loginLink": "x",
                         "usernameFieldPanel:usernameFieldPanel_body:usernameField": name,
@@ -425,8 +432,12 @@ class School:
                     response = session.post(
                         "https://inloggen.somtoday.nl/?0-1.-panel-signInForm",
                         data=data,
-                        headers={"origin": "https://inloggen.somtoday.nl"},
-                        params={"auth": authorization_code},
+                        headers={"origin": "https://inloggen.somtoday.nl",
+                                 },
+                        params={"auth": authorization_code,
+
+                                },
+                                allow_redirects=False
                     )
 
             else: # first username, then password 
@@ -434,16 +445,17 @@ class School:
                     'loginLink': 'x',
                     "passwordFieldPanel:passwordFieldPanel_body:passwordField": password
                 }
-                response = httpx.post(
+                response = session.post(
                     "https://inloggen.somtoday.nl/login?2-1.-passwordForm",
                     headers={
-                        "Content-Type": "application/x-www-form-urlencoded",
-                        "Origin": "https://inloggen.somtoday.nl",
+                        "origin": "https://inloggen.somtoday.nl",
                     },
                     data=data,
+                    params={"auth": authorization_code},
+                                allow_redirects=False
                 )
             callback_oauth: str = response.headers['Location']
-            if callback_oauth.startswith("somtodayleerling://"):
+            if callback_oauth.startswith("somtoday://"):
                 params = {
                     "grant_type": "authorization_code",
                     "session": "no_session",
@@ -470,18 +482,6 @@ class School:
                 raise Exception("Credentials may be incorrect")
                 
             
-        # if last_response_final_response.status_code == 200:
-        #     to_dict = last_response_final_response.json()
-        #     return Student(name=name,
-        #                    password=password,
-        #                    uuid=self.school_uuid,
-        #                    literal_school=self.school_name,
-        #                    auth_code=auth_token,
-        #                    access=to_dict["access_token"],
-        #                    refresh=to_dict["refresh_token"])
-        # else:
-        #     raise httpx.exceptions.RequestException(
-        #         f"request failed. request code {last_response_final_response.status_code}")
 
 
 def find_school(school_name: str) -> School:
@@ -496,7 +496,7 @@ def find_school(school_name: str) -> School:
     Returns:
         School: A school object representing the school name + school uuid (tenant_uuid)
     """
-    schoolresponse = httpx.get("https://servers.somtoday.nl/organisaties.json", timeout=30) 
+    schoolresponse = requests.get("https://servers.somtoday.nl/organisaties.json", timeout=30) 
     response_as_dict = schoolresponse.json()
     final_result = tuple(filter(lambda school_dict: school_dict["naam"].lower(
     ) == school_name.lower(), response_as_dict[0]["instellingen"]))

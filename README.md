@@ -4,6 +4,8 @@
 
 ***A big revamp has been made, I am planning to add SSO authentication.***
 
+***Expect bugs with authentication, please make an issue on this repo if you find any bugs***
+
 
 ***asynchronous support for somtodaypython has been deprecated***
 
