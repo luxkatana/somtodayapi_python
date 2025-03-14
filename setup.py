@@ -3,7 +3,7 @@ setup.py for installing this package do python3 setup.py install.
 '''
 from setuptools import setup, find_packages
 
-VERSION = '1.1.0'
+VERSION = '1.1.2'
 DESCRIPTION = 'Python package for interacting & fetching somtoday\'s data.'
 
 with open("./README.md", "r", encoding="utf-8")as file:

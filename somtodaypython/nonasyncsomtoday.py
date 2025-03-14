@@ -495,7 +495,7 @@ def find_school(school_name: str) -> School:
     Returns:
         School: A school object representing the school name + school uuid (tenant_uuid)
     """
-    schoolresponse = requests.get("https://servers.somtoday.nl/organisaties.json", timeout=30) 
+    schoolresponse = requests.get("https://raw.githubusercontent.com/NONtoday/organisaties.json/refs/heads/main/organisaties.json", timeout=30) 
     response_as_dict = schoolresponse.json()
     final_result = tuple(filter(lambda school_dict: school_dict["naam"].lower(
     ) == school_name.lower(), response_as_dict[0]["instellingen"]))
