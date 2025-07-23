@@ -2,4 +2,10 @@
 - setup.py has been removed
 - using pyproject.toml
 - There is not an examples folder
-
+- PasFoto.save takes an BytesIO object instead of a Path
+- Student.from_access_token's functionality has been extended
+- Removal of Student.auth_code (is nowhere used anyways)
+- Updated docstrings
+- Better explanation for Student.fetch_cijfers 
+- If the resultaat of a cijfer is unknown, then it'll be ``NIET_GEGEVEN`` instead of ``0``
+- Student.indentifier -> Student.identifier (Misspelling)
