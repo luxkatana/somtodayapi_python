@@ -1,14 +1,26 @@
-[build-system]
-requires = ["setuptools", "wheel"]
-build-backend = "setuptools.build_meta"
 
-[tool.poetry]
+[project]
 name = "somtodaypython"
-version = "1.1.0"
+version = "1.1.69" # TODO: Change this to a valid version
 description = "Python package for interacting & fetching somtoday's data."
-authors = ["luxkatana taseen.bibi@gmail.com"]
+authors = [
+    {name="luxkatana", email="taseen.bibi@gmail.com"}
+]
+license = "MIT"
+license-files = ["LICENSE"]
+readme = "README.md"
+requires-python = ">=3.9"
+keywords = ["api", "somtoday", "SOMtoday", "python", "somtodaypython"]
+dependencies = [
+    "requests",
+    "pytz"
+]
 
-[tool.poetry.dependencies]
-python = "^3.8"
-requests = "^2.32.3"
-pytz = "2024.2"
+[project.urls]
+Homepage = "https://github.com/luxkatana/somtodayapi_python"
+Issues = "https://github.com/luxkatana/somtodayapi_python/issues"
+Repository = "https://github.com/luxkatana/somtodayapi_python.git"
+
+[build-system]
+requires = ["setuptools>=77.0.3"]
+build-backend = "setuptools.build_meta"

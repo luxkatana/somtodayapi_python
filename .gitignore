@@ -1,11 +1,8 @@
 /.vscode
-/Makefile
 /__pycache__
 /somtodaypython/__pycache__
 /.env
-/test.*
 /*.json
 /.idea
-/tests/__pycache__/
 /dist
 /somtodaypython.egg-info

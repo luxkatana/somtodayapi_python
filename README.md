@@ -27,7 +27,7 @@ OR
 python -m pip install somtodaypython
 ```
 
-if neither above works then you can always do this
+if neither above works then you can always install by github repository
 ```
 pip3 install git+https://github.com/luxkatana/somtodayapi_python
 ```
