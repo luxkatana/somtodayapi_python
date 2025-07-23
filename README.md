@@ -1,6 +1,9 @@
 ***Somtoday Python, the interactor***
 
-***Changed my mind, somtodaypython is back alive***
+
+*See ``CHANGELOG.md`` for changes/updates*
+
+*See the ``examples/`` folder to see how to use the api*
 
 ***A big revamp has been made, I am planning to add SSO authentication.***
 

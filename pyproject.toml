@@ -1,7 +1,7 @@
 
 [project]
 name = "somtodaypython"
-version = "1.1.69" # TODO: Change this to a valid version
+version = "1.2"
 description = "Python package for interacting & fetching somtoday's data."
 authors = [
     {name="luxkatana", email="taseen.bibi@gmail.com"}
