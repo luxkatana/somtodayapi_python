@@ -9,3 +9,8 @@
 - Better explanation for Student.fetch_cijfers 
 - If the resultaat of a cijfer is unknown, then it'll be ``NIET_GEGEVEN`` instead of ``0``
 - Student.indentifier -> Student.identifier (Misspelling)
+- Removed additional params for Student.fetch_cijfers method 
+- Add of http sessions when interacting with Student data fetching
+- Subject.teacher_short -> Subject.teacher
+- True checking if credentials are wrong
+- True checking if account needs SSO authentication
