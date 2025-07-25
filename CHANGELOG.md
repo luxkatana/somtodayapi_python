@@ -12,3 +12,5 @@
 - Removed additional params for Student.fetch_cijfers method 
 - Add of http sessions when interacting with Student data fetching
 - Subject.teacher_short -> Subject.teacher
+- True checking if credentials are wrong
+- True checking if account needs SSO authentication

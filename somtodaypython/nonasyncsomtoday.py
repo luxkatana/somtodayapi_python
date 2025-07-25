@@ -462,13 +462,13 @@ class School:
         return parse_qs(urlparse(url).query)[key]
 
     def get_student(self, name: str, password: str) -> Student:
-        """description: Gets the student by name and password(without SSO)
+        """description: Gets the student by name and password (not for accounts that has SSO authentication)
         Args:
             name (str):  The student's name - The login name you use to login at inloggen.somtoday.nl
             password (str):  The student's password
 
         Raises:
-            ValueError: Credentials are incorrect.
+            Exception: Credentials are incorrect. Or account needs SSO authentication
         Returns:
             Student: The student object.
         """
@@ -497,20 +497,15 @@ class School:
                 },
                 allow_redirects=False,
             )
-            session.get(
-                response.headers["Location"],
-                allow_redirects=False,
-            )
-            authorization_code = self.parse_query_url(
-                "auth", response.headers["Location"]
-            )[0]
+            session.send(response.next, allow_redirects=False)
+            authorization_code = self.parse_query_url("auth", response.next.url)[0]
             response = session.post(
                 "https://inloggen.somtoday.nl/?0-1.-panel-signInForm",
                 params={"auth": authorization_code},
                 headers={"origin": "https://inloggen.somtoday.nl"},
                 allow_redirects=False,
             )
-            if "auth=" in response.headers["Location"]:  # username + password directly
+            if "auth=" in response.next.url:  # username + password directly
                 data = {
                     "loginLink": "x",
                     "usernameFieldPanel:usernameFieldPanel_body:usernameField": name,
@@ -542,7 +537,8 @@ class School:
                     params={"auth": authorization_code},
                     allow_redirects=False,
                 )
-            callback_oauth: str = response.headers["Location"]
+            # callback_oauth: str = response.headers["Location"]
+            callback_oauth = response.next.url
             if callback_oauth.startswith("somtoday://"):
                 params = {
                     "grant_type": "authorization_code",
@@ -567,8 +563,14 @@ class School:
                     access=response_json["access_token"],
                     refresh=response_json["refresh_token"],
                 )
+            elif callback_oauth.startswith("https://inloggen.somtoday.nl"):
+                raise Exception(
+                    "Credentials are incorrect (after entering credentials, SOMToday redirected to https://inloggen.somtoday.nl)"
+                )
             else:
-                raise Exception("Credentials may be incorrect")
+                return Exception(
+                    "Account has SSO authentication, please have a look at https://github.com/luxkatana/somtodayapi_python/issues/5#issuecomment-3104658720"
+                )
 
 
 def find_school(school_name: str) -> School:
