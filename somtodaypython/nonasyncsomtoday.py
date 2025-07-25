@@ -89,7 +89,7 @@ class Subject:
     begin_hour: int
     end_hour: int
     location: str
-    teacher_short: str
+    teacher: str
 
     def __init__(self, **kwargs: dict[str, Any]):
         self.subject_name: str = kwargs.get("subject")
@@ -99,7 +99,7 @@ class Subject:
         self.begin_hour: int = kwargs.get("beginhour")
         self.end_hour: int = kwargs.get("endhour")
         self.location: str = kwargs.get("location")
-        self.teacher_short: str = kwargs.get("teacher_shortcut")
+        self.teacher: str = kwargs.get("teacher_shortcut")
 
     def __hash__(self) -> int:
         return (
@@ -110,7 +110,7 @@ class Subject:
             + hash(self.begin_hour)
             + hash(self.end_hour)
             + hash(self.location)
-            + hash(self.teacher_short)
+            + hash(self.teacher)
         )
 
 
@@ -163,6 +163,9 @@ class Student:
             school_obj=school,
         )
 
+    def __del__(self):
+        self.api_adapter.close()
+
     def __init__(
         self,
         access_token: Union[str, None] = None,
@@ -181,9 +184,17 @@ class Student:
                 self.school_uuid = school_obj.school_uuid
                 self.school_name = school_obj.school_name
 
+        self.endpoint = "https://api.somtoday.nl"
         self.access_token: str = kwargs.get("access", access_token)
         self.refresh_token: str = kwargs.get("refresh", refresh_token)
         self.school_subjects: list[Union[Subject, list[Subject]]] = []
+        self.api_adapter = requests.Session()
+        self.api_adapter.headers.update(
+            {
+                "Accept": "application/json",
+                "Authorization": f"Bearer {self.access_token}",
+            }
+        )
         self.email: str
         self.full_name: str
         self.gender: str
@@ -191,7 +202,6 @@ class Student:
         self.leerlingnummer: int
         self.identifier: int
         self.birth_datetime: datetime
-        self.endpoint = "https://api.somtoday.nl"
         self.pasfoto: PasFoto
         self.dump_cache: dict[str]
         self.load_more_data()
@@ -204,8 +214,8 @@ class Student:
     def yield_fetch_cijfers(
         self, lower_bound_range: int, upper_bound_range: int
     ) -> Generator[Cijfer, Cijfer, Cijfer]:
-        """yields the cijfers by calling self.fetch_cijfers() and yielding it's results
-        You may only fetch max grades so
+        """yields the cijfers by calling Student.fetch_cijfers() and yielding it's results
+        You may only fetch max grades so (please also take a look at Student.fetch_cijfers's docstring)
         (upper_boung_range - lower_bound_range) < 100 is valid
         Args:
             lower_bound_range (int):  minimum of the pagination
@@ -228,6 +238,8 @@ class Student:
     ) -> list[Cijfer]:
         """Fetches the grades. SOMToday uses a pagination system,
         therefore you can only fetch max 99 grades at a time.
+        NOTE: SOMToday sometimes has the tendency to also provide school grades from previous school years + some rapportcolumns
+        The Cijfer.resultaat may be ``NIET_GEGEVEN`` if the resultaat couldn't be fetched from the grades api call.
 
         Args:
             lower_bound_range (int): Minimum of the pagination
@@ -242,14 +254,10 @@ class Student:
         if (upper_bound_range - lower_bound_range) > 99:
             raise ValueError("You may only fetch 99 grades max")
         headers = {
-            "Accept": "Application/json",
-            "Authorization": f"Bearer {self.access_token}",
             "Range": f"items={lower_bound_range}-{upper_bound_range}",
         }
-        params = {"additional": ["berekendRapportCijfer"]}
-        response = requests.get(
-            f"{self.endpoint}/rest/v1/resultaten/huidigVoorLeerling/{self.identifier}",
-            params=params,
+        response = self.api_adapter.get(
+            f"/rest/v1/resultaten/huidigVoorLeerling/{self.identifier}",
             headers=headers,
         )
         if response.status_code >= 200 and response.status_code < 300:
@@ -304,17 +312,13 @@ class Student:
             list[Subject]  | list[list[Subject]]:  list what contains Subjects or a grouped Subjects
         """
         params_payload = {
-            "begindatum": f"{begindt.year}-{begindt.month}-{begindt.day}",
-            "einddatum": f"{enddt.year}-{enddt.month}-{enddt.day}",
+            "begindatum": begindt.strftime("%Y-%m-%d"),
+            "einddatum": enddt.strftime("%Y-%m-%d"),
             "additional": ["vak", "docentAfkortingen"],
             "sort": "asc-beginDatumTijd",
         }
-        response = requests.get(
-            f"{self.endpoint}/rest/v1/afspraken",
-            headers={
-                "Accept": "application/json",
-                "Authorization": f"Bearer {self.access_token}",
-            },
+        response = self.api_adapter.get(
+            "/rest/v1/afspraken",
             params=params_payload,
             timeout=30,
         )
@@ -346,18 +350,22 @@ class Student:
                 beginhour=begin_lesuur,
                 endhour=eind_lesuur,
                 location=locatie,
-                teacher_shortcut=docent_afkorting,
+                teacher=docent_afkorting,
             )
-            if group_by_day and begin_time.strftime("%Y-%m-%d") in groups:
-                group = groups.get(begin_time.strftime("%Y-%m-%d"))
-                group.append(target_object)
-            elif group_by_day and begin_time.strftime("%Y-%m-%d") not in groups:
-                new_group = {begin_time.strftime("%Y-%m-%d"): [target_object]}
-                groups.update(new_group)
+            if group_by_day:
+                begin_time_formatted = begin_time.strftime("%Y-%m-%d")
+                if begin_time_formatted in groups:
+                    # group = groups.get(begin_time.strftime("%Y-%m-%d"))
+                    groups[begin_time_formatted].append(target_object)
+                    # group.append(target_object)
+                else:
+                    # new_group = {begin_time.strftime("%Y-%m-%d"): [target_object]}
+                    groups[begin_time_formatted] = [target_object]
+                    # groups.update(new_group)
             else:
                 self.school_subjects.append(target_object)
         if group_by_day:
-            self.school_subjects = [groups.get(x) for x in groups]
+            self.school_subjects = [groups[x] for x in groups]
         return self.school_subjects
 
     def __repr__(self):
@@ -375,12 +383,8 @@ class Student:
         if hasattr(self, "full_name"):
             return False
         else:
-            name_response = requests.get(
+            name_response = self.api_adapter.get(
                 f"{self.endpoint}/rest/v1/leerlingen",
-                headers={
-                    "Authorization": f"Bearer {self.access_token}",
-                    "Accept": "application/json",
-                },
                 params={"additional": "pasfoto"},
                 timeout=30,
             )
@@ -465,10 +469,8 @@ class School:
 
         Raises:
             ValueError: Credentials are incorrect.
-            requests.exceptions.RequestException: Error at  last https request. Rarely happens.
-
         Returns:
-            Student: The student self.
+            Student: The student object.
         """
 
         with requests.Session() as session:
@@ -495,7 +497,10 @@ class School:
                 },
                 allow_redirects=False,
             )
-            session.get(response.headers["Location"], allow_redirects=False)
+            session.get(
+                response.headers["Location"],
+                allow_redirects=False,
+            )
             authorization_code = self.parse_query_url(
                 "auth", response.headers["Location"]
             )[0]
