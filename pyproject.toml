@@ -1,7 +1,7 @@
 
 [project]
 name = "somtodaypython"
-version = "1.2"
+version = "1.2.1"
 dynamic = ["dependencies"]
 description = "Python package for interacting & fetching somtoday's data."
 authors = [
@@ -12,11 +12,6 @@ license-files = ["LICENSE"]
 readme = "README.md"
 requires-python = ">=3.9"
 keywords = ["api", "somtoday", "SOMtoday", "python", "somtodaypython"]
-#dependencies = [
-#    "requests",
-#    "pytz"
-#]
-
 [project.urls]
 Homepage = "https://github.com/luxkatana/somtodayapi_python"
 Issues = "https://github.com/luxkatana/somtodayapi_python/issues"

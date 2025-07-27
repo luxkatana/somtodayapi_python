@@ -257,7 +257,7 @@ class Student:
             "Range": f"items={lower_bound_range}-{upper_bound_range}",
         }
         response = self.api_adapter.get(
-            f"/rest/v1/resultaten/huidigVoorLeerling/{self.identifier}",
+            f"{self.endpoint}/rest/v1/resultaten/huidigVoorLeerling/{self.identifier}",
             headers=headers,
         )
         if response.status_code >= 200 and response.status_code < 300:
@@ -318,7 +318,7 @@ class Student:
             "sort": "asc-beginDatumTijd",
         }
         response = self.api_adapter.get(
-            "/rest/v1/afspraken",
+            f"{self.endpoint}/rest/v1/afspraken",
             params=params_payload,
             timeout=30,
         )
@@ -429,10 +429,10 @@ class School:
             ValueError: uuid is incorrect
 
         Returns:
-            School: The school what it found
+            School: School object
         """
         school_response = requests.get(
-            "https://servers.somtoday.nl/organisaties.json", timeout=30
+            "https://raw.githubusercontent.com/NONtoday/organisaties.json/refs/heads/main/organisaties.json"
         )
         as_dict = school_response.json()
         instellingen = as_dict[0]["instellingen"]
@@ -440,7 +440,7 @@ class School:
         if exists:
             return School(exists[0]["naam"], uuid)
         else:
-            raise ValueError(f"Invalid  uuid: {uuid}")
+            raise ValueError(f"Invalid uuid")
 
     @staticmethod
     def from_school_name(name: str) -> "School":
