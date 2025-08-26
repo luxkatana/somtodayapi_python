@@ -12,7 +12,6 @@ license-files = ["LICENSE"]
 readme = "README.md"
 requires-python = ">=3.9"
 keywords = ["api", "somtoday", "SOMtoday", "python", "somtodaypython"]
-
 [project.urls]
 Homepage = "https://github.com/luxkatana/somtodayapi_python"
 Issues = "https://github.com/luxkatana/somtodayapi_python/issues"

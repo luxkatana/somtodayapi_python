@@ -10,7 +10,11 @@ name: Upload Python Package
 on:
   push:
     branches:
-      - master
+      - main
+    paths:
+      - "pyproject.toml"
+      - "somtodaypython/**"
+      - "requirements.txt"
 
 permissions:
   contents: read
