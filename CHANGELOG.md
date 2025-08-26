@@ -14,3 +14,8 @@
 - Subject.teacher_short -> Subject.teacher
 - True checking if credentials are wrong
 - True checking if account needs SSO authentication
+
+# Changes in 1.2.1 [CRUCIAL]
+- Could not make a proper Student object which has been fixed now
+- Using another way of obtaining the Student.pasfoto
+
