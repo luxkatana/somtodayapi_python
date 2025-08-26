@@ -20,23 +20,20 @@ CET = pytz.timezone("Europe/Amsterdam")
 
 
 class PasFoto:
-    def __init__(self, b64url: str):
-        self.base64url: bytes = b64url[21::].encode()
+    def __init__(self, pasfoto_bytes: bytes):
+        self.pasfoto_bytes = pasfoto_bytes
 
     def save(self, fp: BytesIO) -> bool:
         """save/write the PasFoto to a BytesIO Stream (will not close the stream)
 
         Args:
-            save_to (BytesIO): A stream/file/file pointer to write the PasFoto to
-
-        Returns:
-            bool: returns True everything is ok
+            fp (BytesIO): A stream/file/file pointer to write the PasFoto to
 
         Raises:
             Exception: If something went wrong while writing
         """
         try:
-            fp.write(base64.decodebytes(self.base64url))
+            fp.write(self.pasfoto_bytes)
             return True
         except Exception as e:
             raise e
@@ -238,8 +235,9 @@ class Student:
     ) -> list[Cijfer]:
         """Fetches the grades. SOMToday uses a pagination system,
         therefore you can only fetch max 99 grades at a time.
+
         NOTE: SOMToday sometimes has the tendency to also provide school grades from previous school years + some rapportcolumns
-        The Cijfer.resultaat may be ``NIET_GEGEVEN`` if the resultaat couldn't be fetched from the grades api call.
+        The Cijfer.resultaat may be ``NIET_GEGEVEN`` if the resultaat couldn't be fetched from the grades api call of SOMToday.
 
         Args:
             lower_bound_range (int): Minimum of the pagination
@@ -385,11 +383,13 @@ class Student:
         else:
             name_response = self.api_adapter.get(
                 f"{self.endpoint}/rest/v1/leerlingen",
-                params={"additional": "pasfoto"},
                 timeout=30,
             )
             to_dict = name_response.json()["items"][0]
-            self.pasfoto = PasFoto(to_dict["additionalObjects"]["pasfoto"]["datauri"])
+
+            self.pasfoto = PasFoto(
+                self.api_adapter.get(to_dict["pasfotoUrl"]).text.encode()
+            )
             self.full_name = to_dict.get("roepnaam") + " " + to_dict.get("achternaam")
             self.identifier = to_dict.get("links")[0]["id"]
             self.email = to_dict.get("email")
