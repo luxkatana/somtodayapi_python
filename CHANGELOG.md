@@ -1,4 +1,4 @@
-# Changes in 1.2
+# Changes in 1.2.1
 - setup.py has been removed
 - using pyproject.toml
 - There is not an examples folder
@@ -15,7 +15,7 @@
 - True checking if credentials are wrong
 - True checking if account needs SSO authentication
 
-# Changes in 1.2.1 [CRUCIAL]
+# Changes in 1.2.2 [CRUCIAL]
 - Could not make a proper Student object which has been fixed now
 - Using another way of obtaining the Student.pasfoto
 
